@@ -4,7 +4,7 @@ plugins {
     id "maven-publish"
     id "idea"
     id "net.raphimc.class-token-replacer" version "1.1.2"
-    id "xyz.wagyourtail.jvmdowngrader" version "0.8.3"
+    id "xyz.wagyourtail.jvmdowngrader" version "0.9.1"
 }
 
 base {
@@ -53,16 +53,16 @@ repositories {
 }
 
 dependencies {
-    include "com.viaversion:viaversion-common:5.0.2-SNAPSHOT"
-    include "com.viaversion:viabackwards-common:5.0.2-SNAPSHOT"
-    include "com.viaversion:viarewind-common:4.0.2-SNAPSHOT"
-    include "net.raphimc:ViaLegacy:3.0.2-SNAPSHOT"
-    include "net.raphimc:ViaAprilFools:3.0.1-SNAPSHOT"
+    include "com.viaversion:viaversion-common:5.0.2"
+    include "com.viaversion:viabackwards-common:5.0.2"
+    include "com.viaversion:viarewind-common:4.0.2"
+    include "net.raphimc:ViaLegacy:3.0.2"
+    include "net.raphimc:viaaprilfools-common:3.0.1"
     include("net.raphimc:ViaBedrock:0.0.10-SNAPSHOT") {
         exclude group: "io.netty"
         exclude group: "io.jsonwebtoken"
     }
-    include("net.raphimc:ViaLoader:3.0.2-SNAPSHOT") {
+    include("net.raphimc:ViaLoader:3.0.2") {
         exclude group: "org.slf4j", module: "slf4j-api"
     }
 
@@ -87,10 +87,10 @@ dependencies {
         exclude group: "com.google.code.gson", module: "gson"
     }
     include "net.lenni0451.commons:swing:1.5.1"
-    include("net.raphimc.netminecraft:all:2.5.0") {
+    include("net.raphimc.netminecraft:all:2.5.1-SNAPSHOT") {
         exclude group: "com.google.code.gson", module: "gson"
     }
-    include("net.raphimc:MinecraftAuth:4.0.3-SNAPSHOT") {
+    include("net.raphimc:MinecraftAuth:4.1.0") {
         exclude group: "com.google.code.gson", module: "gson"
         exclude group: "org.slf4j", module: "slf4j-api"
     }
@@ -98,9 +98,10 @@ dependencies {
         exclude group: "io.netty"
     }
     include "gs.mclo:api:3.0.1"
+    include "net.lenni0451:optconfig:1.0.0-SNAPSHOT"
 
-    includeJ8(compileOnly("xyz.wagyourtail.jvmdowngrader:jvmdowngrader:0.8.3"))
-    includeJ8 "xyz.wagyourtail.jvmdowngrader:jvmdowngrader-java-api:0.8.3:downgraded-8"
+    includeJ8(compileOnly("xyz.wagyourtail.jvmdowngrader:jvmdowngrader:0.9.1"))
+    includeJ8 "xyz.wagyourtail.jvmdowngrader:jvmdowngrader-java-api:0.9.1:downgraded-8"
 }
 
 sourceSets {
@@ -209,6 +210,7 @@ downgradeJar {
     }
 
     downgradeTo = JavaVersion.VERSION_1_8
+    ignoreWarningsIn.add("net/lenni0451/commons/httpclient/executor/HttpClientExecutor")
     archiveClassifier = null
     archiveVersion = project.version + "+java8"
 }
