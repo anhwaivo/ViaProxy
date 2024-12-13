@@ -23,11 +23,13 @@ import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
 import net.lenni0451.optconfig.ConfigContext;
+import net.lenni0451.optconfig.ConfigLoader;
 import net.lenni0451.optconfig.annotations.*;
 import net.lenni0451.optconfig.index.ClassIndexer;
 import net.lenni0451.optconfig.index.ConfigType;
 import net.lenni0451.optconfig.index.types.ConfigOption;
 import net.lenni0451.optconfig.index.types.SectionIndex;
+import net.lenni0451.optconfig.provider.ConfigProvider;
 import net.raphimc.viaproxy.ViaProxy;
 import net.raphimc.viaproxy.cli.BetterHelpFormatter;
 import net.raphimc.viaproxy.cli.HelpRequestedException;
@@ -39,6 +41,7 @@ import net.raphimc.viaproxy.util.AddressUtil;
 import net.raphimc.viaproxy.util.config.*;
 import net.raphimc.viaproxy.util.logging.Logger;
 
+import java.io.File;
 import java.net.SocketAddress;
 import java.net.URI;
 import java.util.HashMap;
@@ -181,14 +184,26 @@ public class ViaProxyConfig {
     })
     private boolean fakeAcceptResourcePacks = false;
 
+    public static ViaProxyConfig create(final File configFile) {
+        final ConfigLoader<ViaProxyConfig> configLoader = new ConfigLoader<>(ViaProxyConfig.class);
+        configLoader.getConfigOptions().setResetInvalidOptions(true).setRewriteConfig(true).setCommentSpacing(1);
+        try {
+            return configLoader.load(ConfigProvider.file(configFile)).getConfigInstance();
+        } catch (Throwable e) {
+            throw new RuntimeException("Failed to load config", e);
+        }
+    }
+
     @SuppressWarnings("UnstableApiUsage")
     public void loadFromArguments(final String[] args) throws Exception {
         final OptionParser optionParser = new OptionParser();
         final OptionSpec<Void> optionHelp = optionParser.accepts("help").forHelp();
+        final OptionSpec<Void> optionListVersions = optionParser.accepts("list-versions", "Lists all supported server/target versions").forHelp();
 
         final Map<OptionSpec<Object>, ConfigOption> optionMap = new HashMap<>();
         final Stack<SectionIndex> stack = new Stack<>();
-        stack.push(ClassIndexer.indexClass(ConfigType.INSTANCED, ViaProxyConfig.class));
+        final ConfigLoader<ViaProxyConfig> configLoader = new ConfigLoader<>(ViaProxyConfig.class);
+        stack.push(ClassIndexer.indexClass(ConfigType.INSTANCED, ViaProxyConfig.class, configLoader.getConfigOptions().getClassAccessFactory()));
         while (!stack.isEmpty()) {
             final SectionIndex index = stack.pop();
             stack.addAll(index.getSubSections().values());
@@ -196,9 +211,9 @@ public class ViaProxyConfig {
             for (ConfigOption option : index.getOptions()) {
                 if (index.getSubSections().containsKey(option)) continue;
 
-                Object defaultValue = option.getField().get(this);
+                Object defaultValue = option.getFieldAccess().getValue(this);
                 if (option.getTypeSerializer() != null) {
-                    defaultValue = option.createTypeSerializer(null, ViaProxyConfig.class, this).serialize(defaultValue);
+                    defaultValue = option.createTypeSerializer(configLoader, ViaProxyConfig.class, this).serialize(defaultValue);
                 }
                 final OptionSpec<Object> cliOption = optionParser.accepts(option.getName()).withRequiredArg().ofType((Class<Object>) defaultValue.getClass()).defaultsTo(defaultValue);
                 optionMap.put(cliOption, option);
@@ -210,6 +225,13 @@ public class ViaProxyConfig {
             final OptionSet options = optionParser.parse(args);
             if (options.has(optionHelp)) {
                 throw new HelpRequestedException();
+            } else if (options.has(optionListVersions)) {
+                Logger.LOGGER.info("=== Supported Server Versions ===");
+                for (ProtocolVersion version : ProtocolVersion.getProtocols()) {
+                    Logger.LOGGER.info(version.getName());
+                }
+                Logger.LOGGER.info("===================================");
+                System.exit(0);
             }
 
             if (options.has("minecraft-account-index")) {
@@ -220,12 +242,12 @@ public class ViaProxyConfig {
                 if (options.has(entry.getKey())) {
                     Object value = options.valueOf(entry.getKey());
                     if (option.getTypeSerializer() != null) {
-                        value = option.createTypeSerializer(null, ViaProxyConfig.class, this).deserialize((Class<Object>) option.getField().getType(), value);
+                        value = option.createTypeSerializer(configLoader, ViaProxyConfig.class, this).deserialize((Class<Object>) option.getFieldAccess().getType(), value);
                     }
                     if (option.getValidator() != null) {
                         value = option.getValidator().invoke(this, value);
                     }
-                    option.getField().set(this, value);
+                    option.getFieldAccess().setValue(this, value);
                 }
             }
 
@@ -480,11 +502,7 @@ public class ViaProxyConfig {
         /**
          * No authentication (Offline mode)
          */
-        NONE("tab.general.minecraft_account.option_no_account"),
-        /**
-         * Requires the OpenAuthMod client mod (https://modrinth.com/mod/openauthmod)
-         */
-        OPENAUTHMOD("tab.general.minecraft_account.option_openauthmod");
+        NONE("tab.general.minecraft_account.option_no_account");
 
         private final String guiTranslationKey;
 

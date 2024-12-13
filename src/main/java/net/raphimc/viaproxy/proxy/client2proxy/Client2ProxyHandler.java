@@ -28,7 +28,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import net.raphimc.netminecraft.constants.ConnectionState;
 import net.raphimc.netminecraft.constants.IntendedState;
-import net.raphimc.netminecraft.packet.IPacket;
+import net.raphimc.netminecraft.packet.Packet;
 import net.raphimc.netminecraft.packet.impl.handshaking.C2SHandshakingClientIntentionPacket;
 import net.raphimc.viabedrock.api.BedrockProtocolVersion;
 import net.raphimc.vialegacy.api.LegacyProtocolVersion;
@@ -63,7 +63,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
-public class Client2ProxyHandler extends SimpleChannelInboundHandler<IPacket> {
+public class Client2ProxyHandler extends SimpleChannelInboundHandler<Packet> {
 
     private ProxyConnection proxyConnection;
 
@@ -87,7 +87,7 @@ public class Client2ProxyHandler extends SimpleChannelInboundHandler<IPacket> {
     }
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, IPacket packet) throws Exception {
+    protected void channelRead0(ChannelHandlerContext ctx, Packet packet) throws Exception {
         if (this.proxyConnection.isClosed()) return;
 
         if (this.proxyConnection.getC2pConnectionState() == ConnectionState.HANDSHAKING) {
@@ -120,7 +120,7 @@ public class Client2ProxyHandler extends SimpleChannelInboundHandler<IPacket> {
         this.proxyConnection.setClientVersion(clientVersion);
         this.proxyConnection.setC2pConnectionState(packet.intendedState.getConnectionState());
 
-        if (!clientVersion.isKnown()) {
+        if (!ProtocolVersion.isRegistered(clientVersion.getVersionType(), clientVersion.getOriginalVersion())) {
             this.proxyConnection.kickClient("§cYour client version is not supported by ViaProxy!");
         }
 
@@ -186,7 +186,7 @@ public class Client2ProxyHandler extends SimpleChannelInboundHandler<IPacket> {
             clientHandshakeAddress = null;
         }
 
-        final PreConnectEvent preConnectEvent = new PreConnectEvent(serverAddress, serverVersion, clientVersion, clientHandshakeAddress, this.proxyConnection.getC2P());
+        final PreConnectEvent preConnectEvent = new PreConnectEvent(serverAddress, serverVersion, clientVersion, clientHandshakeAddress, packet.intendedState, this.proxyConnection.getC2P());
         if (ViaProxy.EVENT_MANAGER.call(preConnectEvent).isCancelled()) {
             this.proxyConnection.kickClient(preConnectEvent.getCancelMessage());
         }
@@ -230,7 +230,6 @@ public class Client2ProxyHandler extends SimpleChannelInboundHandler<IPacket> {
         this.proxyConnection.setUserOptions(userOptions);
         this.proxyConnection.setC2pConnectionState(intendedState.getConnectionState());
         this.proxyConnection.getPacketHandlers().add(new StatusPacketHandler(this.proxyConnection));
-        this.proxyConnection.getPacketHandlers().add(new OpenAuthModPacketHandler(this.proxyConnection));
         if (ViaProxy.getConfig().shouldSupportSimpleVoiceChat() && serverVersion.newerThan(ProtocolVersion.v1_14) && clientVersion.newerThan(ProtocolVersion.v1_14)) {
             this.proxyConnection.getPacketHandlers().add(new SimpleVoiceChatPacketHandler(this.proxyConnection));
         }
@@ -242,6 +241,7 @@ public class Client2ProxyHandler extends SimpleChannelInboundHandler<IPacket> {
         }
         this.proxyConnection.getPacketHandlers().add(new CompressionPacketHandler(this.proxyConnection));
         this.proxyConnection.getPacketHandlers().add(new LoginPacketHandler(this.proxyConnection));
+        this.proxyConnection.getPacketHandlers().add(new DisconnectPacketHandler(this.proxyConnection));
         if (clientVersion.newerThanOrEqualTo(ProtocolVersion.v1_20_5)) {
             this.proxyConnection.getPacketHandlers().add(new TransferPacketHandler(this.proxyConnection));
         }

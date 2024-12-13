@@ -18,26 +18,29 @@
 package net.raphimc.viaproxy.proxy.packethandler;
 
 import io.netty.channel.ChannelFutureListener;
-import net.raphimc.netminecraft.constants.ConnectionState;
 import net.raphimc.netminecraft.packet.Packet;
+import net.raphimc.netminecraft.packet.impl.common.S2CDisconnectPacket;
+import net.raphimc.netminecraft.packet.impl.login.S2CLoginDisconnectPacket;
+import net.raphimc.viaproxy.cli.ConsoleFormatter;
 import net.raphimc.viaproxy.proxy.session.ProxyConnection;
+import net.raphimc.viaproxy.util.logging.Logger;
 
 import java.util.List;
 
-public class UnexpectedPacketHandler extends PacketHandler {
+public class DisconnectPacketHandler extends PacketHandler {
 
-    public UnexpectedPacketHandler(ProxyConnection proxyConnection) {
+    public DisconnectPacketHandler(ProxyConnection proxyConnection) {
         super(proxyConnection);
     }
 
     @Override
-    public boolean handleC2P(Packet packet, List<ChannelFutureListener> listeners) {
-        final ConnectionState connectionState = this.proxyConnection.getC2pConnectionState();
-        if (connectionState.equals(ConnectionState.HANDSHAKING)) {
-            throw new IllegalStateException("Unexpected packet in " + connectionState + " state");
+    public boolean handleP2S(Packet packet, List<ChannelFutureListener> listeners) throws Exception {
+        if (packet instanceof S2CLoginDisconnectPacket loginDisconnectPacket) {
+            Logger.u_info("server disconnect", this.proxyConnection, ConsoleFormatter.convert(loginDisconnectPacket.reason.asLegacyFormatString()));
+        } else if (packet instanceof S2CDisconnectPacket disconnectPacket) {
+            Logger.u_info("server disconnect", this.proxyConnection, ConsoleFormatter.convert(disconnectPacket.reason.asLegacyFormatString()));
         }
-
-        return true;
+        return super.handleP2S(packet, listeners);
     }
 
 }

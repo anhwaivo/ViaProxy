@@ -15,29 +15,27 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package net.raphimc.viaproxy.proxy.packethandler;
+package net.raphimc.viaproxy.plugins.events;
 
-import io.netty.channel.ChannelFutureListener;
-import net.raphimc.netminecraft.constants.ConnectionState;
-import net.raphimc.netminecraft.packet.Packet;
+import net.raphimc.viaproxy.plugins.events.types.EventCancellable;
 import net.raphimc.viaproxy.proxy.session.ProxyConnection;
 
-import java.util.List;
+public class JoinServerRequestEvent extends EventCancellable  {
 
-public class UnexpectedPacketHandler extends PacketHandler {
+    private final ProxyConnection proxyConnection;
+    private final String serverIdHash;
 
-    public UnexpectedPacketHandler(ProxyConnection proxyConnection) {
-        super(proxyConnection);
+    public JoinServerRequestEvent(final ProxyConnection proxyConnection, final String serverIdHash) {
+        this.proxyConnection = proxyConnection;
+        this.serverIdHash = serverIdHash;
     }
 
-    @Override
-    public boolean handleC2P(Packet packet, List<ChannelFutureListener> listeners) {
-        final ConnectionState connectionState = this.proxyConnection.getC2pConnectionState();
-        if (connectionState.equals(ConnectionState.HANDSHAKING)) {
-            throw new IllegalStateException("Unexpected packet in " + connectionState + " state");
-        }
+    public ProxyConnection getProxyConnection() {
+        return this.proxyConnection;
+    }
 
-        return true;
+    public String getServerIdHash() {
+        return this.serverIdHash;
     }
 
 }

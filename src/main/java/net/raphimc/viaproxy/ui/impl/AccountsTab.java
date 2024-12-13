@@ -62,7 +62,7 @@ public class AccountsTab extends UITab {
 
         int gridy = 0;
         {
-            JLabel infoLabel = new JLabel("<html><p>" + I18n.get("tab.accounts.description.line1") + "</p><br><p>" + I18n.get("tab.accounts.description.line2") + "</p></html>");
+            JLabel infoLabel = new JLabel("<html><p>" + I18n.get("tab.accounts.description.line1") + "</p></html>");
             GBC.create(body).grid(0, gridy++).weightx(1).insets(BORDER_PADDING, BORDER_PADDING, 0, BORDER_PADDING).fill(GBC.HORIZONTAL).add(infoLabel);
         }
         {
@@ -157,7 +157,6 @@ public class AccountsTab extends UITab {
         {
             final JPanel addButtons = new JPanel();
             addButtons.setLayout(new GridLayout(1, 3, BORDER_PADDING, 0));
-            contentPane.add(addButtons);
             {
                 JButton addOfflineAccountButton = new JButton(I18n.get("tab.accounts.add_offline.label"));
                 addOfflineAccountButton.addActionListener(event -> {

@@ -15,28 +15,26 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package net.raphimc.viaproxy.proxy.packethandler;
+package net.raphimc.viaproxy.ui.elements;
 
-import io.netty.channel.ChannelFutureListener;
-import net.raphimc.netminecraft.packet.Packet;
-import net.raphimc.viaproxy.proxy.session.ProxyConnection;
+import net.raphimc.viaproxy.ui.ViaProxyWindow;
 
-import java.util.List;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
-public abstract class PacketHandler {
+public class LinkLabel extends JLabel {
 
-    protected final ProxyConnection proxyConnection;
-
-    public PacketHandler(final ProxyConnection proxyConnection) {
-        this.proxyConnection = proxyConnection;
-    }
-
-    public boolean handleC2P(final Packet packet, final List<ChannelFutureListener> listeners) throws Exception {
-        return true;
-    }
-
-    public boolean handleP2S(final Packet packet, final List<ChannelFutureListener> listeners) throws Exception {
-        return true;
+    public LinkLabel(final String text, final String url) {
+        super("<html><a href=\"\">" + text + "</a></html>");
+        this.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                ViaProxyWindow.openURL(url);
+            }
+        });
+        this.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
     }
 
 }

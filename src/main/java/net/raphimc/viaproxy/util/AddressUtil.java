@@ -37,6 +37,10 @@ public class AddressUtil {
             return new DomainSocketAddress(filePath);
         } else { // IP Address
             final HostAndPort hostAndPort = HostAndPort.fromString(serverAddress);
+            if (hostAndPort.getHost().isBlank()) {
+                throw new IllegalArgumentException("Server address cannot be blank");
+            }
+
             final int port;
             if (version != null) {
                 port = hostAndPort.getPortOrDefault(getDefaultPort(version));
